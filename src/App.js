@@ -21,9 +21,22 @@ const notesReducer = (prevState, action) =>{
             return newState
         }
 
+        case 'DELETE_NOTE': {
+            const newState = {
+                ...prevState,
+                notes: prevState.notes.filter(note => note.id !== action.payload.id),
+                totalNotes: prevState.notes.length - 1,
+            };
+            console.log('After DELETE_NOTE: ', newState);
+            return newState;
+        }
+    
+
     }
 
-}
+   
+
+};
 
 const App = () => {
     const [notesState, dispatch] = useReducer(notesReducer, initialNoteState)
@@ -43,27 +56,57 @@ const App = () => {
         }
 
         dispatch({ type: 'ADD_NOTE', payload: newNote})
+
     }
 
+    const dragOver = event => {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    const dropNote = event => {
+        event.target.style.left = `${event.pageX - 50}px`;
+        event.target.style.top = `${event.pageY - 50}px`;
+    };
+
+
     return(
-        <div className='app' >
+        <div className="app" onDragOver={dragOver}>
             <h1>
-                Sticky Notes
+                Sticky Notes ({notesState.totalNotes})
+                <span>{notesState.notes.length ? `Last note created: ${notesState.lastNoteCreated}` : ' '}</span>
             </h1>
-            <form onSubmit={addNote} className='note-form'>
-                <textarea value={noteInput}
-                onChange={event => setNoteInput(event.target.value)} 
-                placeholder='Add new note...'></textarea>
+
+            <form className="note-form" onSubmit={addNote}>
+                <textarea placeholder="Create a new note..." 
+                    value={noteInput}
+                    onChange={event => setNoteInput(event.target.value)}>
+                </textarea>
                 <button>Add</button>
-
-                {notesState}
-                
-             
-
             </form>
 
+            {notesState
+                .notes
+                .map(note => (
+                    <div className="note"
+                        style={{ transform: `rotate(${note.rotate}deg)` }}
+                        onDragEnd={dropNote}
+                        draggable="true"
+                        key={note.id}>
+
+                        <div onClick={() => dispatch({ type: 'DELETE_NOTE', payload: note })}
+                            className="close">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+
+                        <pre className="text">{note.text}</pre>
+                    </div>
+                ))
+            }
         </div>
-    )
+    );
 }
 
 export default App
